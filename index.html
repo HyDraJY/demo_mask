@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OSM_practice</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" />
+  <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/MarkerCluster.css' />
+  <link rel='stylesheet'
+    href='https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/MarkerCluster.Default.css' />
+</head>
+
+<body>
+  <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.4.1/leaflet.markercluster.js'></script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.js'></script>
+  <div id="map">
+  </div>
+  <script>
+    function getIconColor(maskIndex) {
+      if (maskIndex === 0) return blackIcon
+      else if (maskIndex <= 20) {
+        return redIcon
+      } else {
+        return greenIcon
+      }
+    }
+
+    let greenIcon = new L.Icon({
+      iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+
+    let blackIcon = new L.Icon({
+      iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    })
+
+    let redIcon = new L.Icon({
+      iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    })
+
+    let yellowIcon = new L.Icon({
+      iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    })
+      ; (function () {
+
+        let map = L.map('map', {
+          center: [24.1819285, 120.5865505],
+          // center: [xi, yi],
+          zoom: 16
+        });
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        let markers = new L.MarkerClusterGroup({
+          animate: true,
+          animateAddingMarkers: true
+        }).addTo(map)
+
+        axios.get('https://raw.githubusercontent.com/kiang/pharmacies/master/json/points.json?fbclid=IwAR3sVcBGBwagId7BYabH2mN-vkEi9sbTsVCStN8YkCmByIyRiRe5cppbMbg')
+          .then(res => {
+            let watcher = navigator.geolocation.getCurrentPosition(position => {
+              console.log(position)
+              let lat = position.coords.latitude
+              let lng = position.coords.longitude
+              map.setView([lat, lng])
+              markers.addLayer(L.marker([lat, lng], { icon: yellowIcon }).bindPopup('<h3>我在這裡!!</h3>'))
+            }, err => {
+              console.log(err);
+              navigator.geolocation.clearWatch(watcher)
+            })
+            res.data.features.map(item => {
+              markers.addLayer(
+                L.marker([item.geometry.coordinates[1], item.geometry.coordinates[0]], {
+                  icon: getIconColor(item.properties.mask_adult + item.properties.mask_child)
+                })
+                  .bindPopup(`
+                <h3>${item.properties.name}</h3>
+                <div>連絡電話: ${item.properties.phone}</div>              
+                <div>地址: ${item.properties.address}</div>
+                <div>最後更新時間: ${item.properties.updated ? item.properties.updated : '無'}</div><hr/>
+                <div class='mask'>成人口罩: ${item.properties.mask_adult}</div>
+                <div class='mask'>兒童口罩: ${item.properties.mask_child}</div>
+              `))
+            })
+            map.addLayer(markers)
+          })
+      })()
+  </script>
+</body>
+
+</html>
+
+<style>
+  html,
+  body {
+    width: 100%;
+    height: 100%;
+  }
+
+  #map {
+    width: 100%;
+    height: 100%;
+  }
+
+  .mask {
+    margin-right: 5px;
+    border: #34495e solid;
+    padding: 2px 5px;
+    display: inline-block;
+    border-radius: 10px;
+    background-color: #34495e;
+    font-weight: bold;
+    font-family: "微軟正黑體";
+    color: white;
+
+  }
+
+  .leaflet-popup-content-wrapper {
+    background-color: #41b883;
+    font-size: 1.3em;
+    font-family: "微軟正黑體";
+    color: white;
+
+  }
+
+  .leaflet-popup-content-wrapper div {
+    margin-top: 2px;
+    margin-bottom: 2px;
+  }
+
+  .marker-cluster-large {
+    background-color: rgba(65, 184, 131, 0.6);
+  }
+
+  .marker-cluster-large div {
+    background-color: rgba(65, 184, 55, 0.6);
+  }
+
+  .marker-cluster-medium {
+    background-color: rgba(241, 211, 87, 0.6);
+  }
+
+  .marker-cluster-medium div {
+    background-color: rgba(240, 194, 12, 0.6);
+  }
+
+  .marker-cluster-small {
+    background-color: rgba(253, 156, 115, 0.6);
+  }
+
+  .marker-cluster-small div {
+    background-color: rgba(241, 128, 23, 0.6);
+  }
+
+  .marker-cluster {
+    background-clip: padding-box;
+    border-radius: 20px;
+  }
+
+  .marker-cluster div {
+    width: 30px;
+    height: 30px;
+    margin-left: 5px;
+    margin-top: 5px;
+
+    text-align: center;
+    border-radius: 15px;
+    font: 12px "Helvetica Neue", Arial, Helvetica, sans-serif;
+  }
+
+  .marker-cluster span {
+    line-height: 30px;
+  }
+</style>
